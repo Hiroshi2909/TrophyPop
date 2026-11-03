@@ -82,15 +82,17 @@ public static class TrophyArt
         catch { return null; }
     }
 
-    public static ImageSource? FromFile(string? path)
+    // decodeWidth: lê a imagem já reduzida, para uma foto grande não ocupar memória à toa
+    public static ImageSource? FromFile(string? path, int decodeWidth = 0)
     {
-        if (path == null || !File.Exists(path)) return null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
         try
         {
             var img = new BitmapImage();
             img.BeginInit();
             img.UriSource = new Uri(path);
             img.CacheOption = BitmapCacheOption.OnLoad;
+            if (decodeWidth > 0) img.DecodePixelWidth = decodeWidth;
             img.EndInit();
             img.Freeze();
             return img;

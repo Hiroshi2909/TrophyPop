@@ -25,7 +25,7 @@ public sealed class PopupManager(AppConfig cfg)
             {
                 var (item, settings) = queue.Dequeue();
                 SoundService.Play(item.Grade, settings);
-                await new PopupWindow(item).PlayAsync(settings.Corner, settings.PopupSeconds);
+                await new PopupWindow(item, settings).PlayAsync();
                 await Task.Delay(250);
             }
         }
@@ -38,8 +38,8 @@ public sealed class PopupManager(AppConfig cfg)
     }
 
     public static PopupItem ForAchievement(AchievementInfo a, string? imagePath) =>
-        new("Você ganhou um troféu", a.DisplayName, Grades.Detail(a), a.Grade, imagePath);
+        new(a.DisplayName, Grades.Label(a.Grade), Grades.Rarity(a.Percent), a.Grade, imagePath);
 
     public static PopupItem ForPlatinum(string gameName) =>
-        new("Você ganhou um troféu de platina", gameName, "Todos os troféus conquistados", TrophyGrade.Platinum, null);
+        new(gameName, "Todos os troféus conquistados", "", TrophyGrade.Platinum, null);
 }

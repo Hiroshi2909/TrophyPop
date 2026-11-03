@@ -22,7 +22,9 @@ public sealed record GameAchievements(int AppId, string GameName, List<Achieveme
 
 public sealed record OwnedGame(int AppId, string Name, int PlaytimeMinutes, string IconUrl, DateTime? LastPlayed);
 
-public sealed record PopupItem(string Header, string Title, string Detail, TrophyGrade Grade, string? ImagePath);
+/// <param name="Detail">Tipo do troféu (ou o texto da platina).</param>
+/// <param name="Rarity">"3,1% dos jogadores", mostrado se a opção de raridade estiver ligada.</param>
+public sealed record PopupItem(string Title, string Detail, string Rarity, TrophyGrade Grade, string? ImagePath);
 
 public interface ITrophySource
 {
@@ -55,10 +57,4 @@ public static class Grades
     public static string Rarity(double? percent) => percent is not double p
         ? ""
         : p.ToString(p < 1 ? "0.0#" : "0.#", PtBr) + "% dos jogadores";
-
-    public static string Detail(AchievementInfo a)
-    {
-        var rarity = Rarity(a.Percent);
-        return rarity.Length == 0 ? Label(a.Grade) : $"{Label(a.Grade)} · {rarity}";
-    }
 }

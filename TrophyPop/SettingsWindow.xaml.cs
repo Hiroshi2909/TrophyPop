@@ -17,20 +17,18 @@ public partial class SettingsWindow : Window
         ("spanish", "Español (España)"),
     ];
 
-    static readonly string[] Corners =
-        ["Canto superior direito", "Canto superior esquerdo", "Canto inferior direito", "Canto inferior esquerdo"];
-
     readonly AppConfig cfg;
-    readonly Action<AppConfig> preview;
+    readonly Action preview, openStudio;
 
     public event Action? Saved;
 
-    public SettingsWindow(AppConfig cfg, Action<AppConfig> preview)
+    public SettingsWindow(AppConfig cfg, Action preview, Action openStudio)
     {
         InitializeComponent();
         Icon = TrophyArt.Render(64);
         this.cfg = cfg;
         this.preview = preview;
+        this.openStudio = openStudio;
 
         ApiKeyBox.Text = cfg.ApiKey;
         SteamIdBox.Text = cfg.SteamId;
@@ -38,12 +36,6 @@ public partial class SettingsWindow : Window
         GoldBox.Text = cfg.GoldBelowPercent.ToString(CultureInfo.CurrentCulture);
         LanguageBox.ItemsSource = Languages.Select(l => l.Name).ToList();
         LanguageBox.SelectedIndex = Math.Max(0, Array.FindIndex(Languages, l => l.Code == cfg.Language));
-        CornerBox.ItemsSource = Corners;
-        CornerBox.SelectedIndex = (int)cfg.Corner;
-        DurationSlider.Value = cfg.PopupSeconds;
-        DurationLabel.Text = $"Duração: {DurationSlider.Value:0} s";
-        SoundCheck.IsChecked = cfg.SoundEnabled;
-        VolumeSlider.Value = cfg.Volume;
         StartupCheck.IsChecked = Startup.IsEnabled();
     }
 
@@ -54,10 +46,6 @@ public partial class SettingsWindow : Window
         if (TryPercent(SilverBox.Text, out var silver)) target.SilverBelowPercent = silver;
         if (TryPercent(GoldBox.Text, out var gold)) target.GoldBelowPercent = gold;
         target.Language = Languages[Math.Max(0, LanguageBox.SelectedIndex)].Code;
-        target.Corner = (PopupCorner)Math.Max(0, CornerBox.SelectedIndex);
-        target.PopupSeconds = DurationSlider.Value;
-        target.SoundEnabled = SoundCheck.IsChecked == true;
-        target.Volume = VolumeSlider.Value;
         return target;
     }
 
@@ -86,7 +74,9 @@ public partial class SettingsWindow : Window
         }
     }
 
-    void Preview_Click(object sender, RoutedEventArgs e) => preview(ReadInto(cfg.Clone()));
+    void Preview_Click(object sender, RoutedEventArgs e) => preview();
+
+    void Studio_Click(object sender, RoutedEventArgs e) => openStudio();
 
     void Save_Click(object sender, RoutedEventArgs e)
     {
@@ -99,20 +89,9 @@ public partial class SettingsWindow : Window
         Close();
     }
 
-    void DurationSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (DurationLabel != null) DurationLabel.Text = $"Duração: {e.NewValue:0} s";
-    }
-
     void Link_RequestNavigate(object sender, RequestNavigateEventArgs e)
     {
         Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         e.Handled = true;
-    }
-
-    void OpenFolder_Click(object sender, RoutedEventArgs e)
-    {
-        Directory.CreateDirectory(AppConfig.Dir);
-        Process.Start("explorer.exe", AppConfig.Dir);
     }
 }

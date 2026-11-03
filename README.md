@@ -29,10 +29,29 @@ A Steam não tem tipos de troféu. Aqui o tipo vem da raridade (você pode mudar
 ## Menu do ícone perto do relógio
 
 - **Lista de troféus**: seus jogos e troféus, com filtros e ordenação. Também abre com dois cliques no ícone.
-- **Configurações**
+- **Personalizar (fundo, animação e som)**: abre o Estúdio.
+- **Configurações da conta Steam**
 - **Testar pop-up**: mostra um exemplo de cada tipo.
 
 ![Lista de troféus](docs/lista.png)
+
+## Estúdio de personalização
+
+Tudo com prévia ao vivo, numa "cena de jogo" escura, clara ou colorida para ver o contraste:
+
+- **Fundo**: escuro (como no PS5), vidro, claro, cor sólida, degradê ou uma imagem sua (com opção de escurecer); opacidade, cantos arredondados, tamanho, sombra e cor da borda.
+- **Animação**: entrada como no PS5 (abre a partir do ícone), deslizando da borda, surgindo suave ou caindo e quicando; velocidade e tempo na tela; e o que a taça faz (pulo e balanço, brilho no metal, faíscas, luz atrás).
+- **Som**: um som para cada tipo de troféu. Escolha entre 7 sons prontos (Plim, Arpejo, Sino, Cristal, Moeda, Fanfarra, Suave) ou um arquivo seu (mp3, wav, wma, m4a, aac), com volume e tom para cada um.
+- **Texto e posição**: os textos do pop-up, mostrar ou não a raridade, a cor do texto e o canto da tela.
+
+Ao salvar, o app já passa a usar as escolhas, sem reiniciar. O Estúdio roda como um programa separado e sai da memória por inteiro quando você fecha, então não pesa no jogo.
+
+![Estúdio, aba Fundo](docs/estudio-fundo.png)
+![Estúdio, aba Som](docs/estudio-som.png)
+
+| Degradê | Claro |
+|---|---|
+| ![Estilo degradê](docs/estilo-degrade.png) | ![Estilo claro](docs/estilo-claro.png) |
 
 ## Feito para não pesar no jogo
 
@@ -47,7 +66,7 @@ Medido parado: cerca de 9 MB de memória e quase nada de processador.
 ## Dicas
 
 - Jogue em **tela cheia sem bordas** (ou janela). Em tela cheia exclusiva, o Windows não deixa nada aparecer por cima do jogo.
-- Para usar seu próprio som, coloque `trofeu.wav` e `platina.wav` em `%APPDATA%\TrophyPop`.
+- Para usar seu próprio som, escolha o arquivo na aba **Som** do Estúdio.
 - O pop-up aparece alguns segundos depois de você ganhar a conquista, que é o tempo da Steam atualizar.
 - Se algo der errado, veja `%APPDATA%\TrophyPop\erros.log`.
 

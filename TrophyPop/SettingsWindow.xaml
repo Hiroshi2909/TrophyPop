@@ -49,37 +49,10 @@
         <TextBlock Margin="0,14,0,6" Text="Idioma dos nomes dos troféus"/>
         <ComboBox x:Name="LanguageBox" Width="280" HorizontalAlignment="Left"/>
 
-        <TextBlock Text="Pop-up" FontSize="20" FontWeight="SemiBold" Margin="0,28,0,0"/>
-        <Grid Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="24"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Text="Posição na tela" Margin="0,0,0,6"/>
-                <ComboBox x:Name="CornerBox" HorizontalAlignment="Stretch"/>
-            </StackPanel>
-            <StackPanel Grid.Column="2">
-                <TextBlock x:Name="DurationLabel" Margin="0,0,0,6"/>
-                <Slider x:Name="DurationSlider" Minimum="3" Maximum="12" TickFrequency="1" IsSnapToTickEnabled="True"
-                        ValueChanged="DurationSlider_ValueChanged"/>
-            </StackPanel>
-        </Grid>
-
-        <Grid Margin="0,14,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <CheckBox x:Name="SoundCheck" Content="Tocar som" VerticalAlignment="Center" Margin="0,0,18,0"/>
-            <Slider x:Name="VolumeSlider" Grid.Column="1" Minimum="0" Maximum="1" VerticalAlignment="Center"
-                    IsEnabled="{Binding IsChecked, ElementName=SoundCheck}"/>
-        </Grid>
-        <TextBlock Margin="0,6,0,0" FontSize="12" Opacity="0.7" TextWrapping="Wrap">
-            Quer seu próprio som? Coloque arquivos trofeu.wav e platina.wav na
-            <Hyperlink Click="OpenFolder_Click">pasta do TrophyPop</Hyperlink>.
-        </TextBlock>
+        <TextBlock Text="Visual e som" FontSize="20" FontWeight="SemiBold" Margin="0,28,0,0"/>
+        <TextBlock Margin="0,6,0,10" FontSize="12" Opacity="0.7" TextWrapping="Wrap"
+                   Text="Fundo, animação, sons de cada troféu, textos e posição ficam no Estúdio, com prévia ao vivo."/>
+        <Button Content="Abrir o Estúdio de personalização" HorizontalAlignment="Left" Click="Studio_Click"/>
 
         <CheckBox x:Name="StartupCheck" Content="Iniciar junto com o Windows" Margin="0,16,0,0"/>
 

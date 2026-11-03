@@ -11,42 +11,74 @@ static class Demo
 {
     public static PopupItem SamplePopup(TrophyGrade grade) => grade switch
     {
-        TrophyGrade.Bronze => new("Você ganhou um troféu", "Primeiros passos", "Bronze · 68,4% dos jogadores", grade, null),
-        TrophyGrade.Silver => new("Você ganhou um troféu", "Explorador incansável", "Prata · 18,2% dos jogadores", grade, null),
-        TrophyGrade.Gold => new("Você ganhou um troféu", "Mestre das sombras", "Ouro · 3,1% dos jogadores", grade, null),
+        TrophyGrade.Bronze => new("Primeiros passos", "Bronze", "68,4% dos jogadores", grade, null),
+        TrophyGrade.Silver => new("Explorador incansável", "Prata", "18,2% dos jogadores", grade, null),
+        TrophyGrade.Gold => new("Mestre das sombras", "Ouro", "3,1% dos jogadores", grade, null),
         _ => PopupManager.ForPlatinum("Jogo de teste"),
     };
+
+    // Imagem de exemplo gravada uma vez na pasta temporária (usada na prévia do Estúdio).
+    public static string SampleArtPath()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "trophypop-exemplo.png");
+        if (!File.Exists(path))
+            try { TrophyArt.SavePng(SampleArt(), path); } catch { }
+        return path;
+    }
 
     public static async Task SnapshotAsync(string dir)
     {
         Directory.CreateDirectory(dir);
         var art = Path.Combine(dir, "arte-exemplo.png");
         TrophyArt.SavePng(SampleArt(), art);
+        var cfg = new AppConfig();
+
+        async Task Shot(PopupItem item, AppConfig settings, string name, double progress = 1, bool highlight = false)
+        {
+            var popup = new PopupWindow(item, settings);
+            TrophyArt.SavePng(await popup.SnapshotAsync(progress, highlight), Path.Combine(dir, name + ".png"));
+            popup.Close();
+        }
 
         foreach (var grade in Enum.GetValues<TrophyGrade>())
         {
             var item = SamplePopup(grade);
             if (grade == TrophyGrade.Silver) item = item with { ImagePath = art };
-            var popup = new PopupWindow(item);
-            TrophyArt.SavePng(await popup.SnapshotAsync(), Path.Combine(dir, $"popup-{grade}.png"));
-            popup.Close();
+            await Shot(item, cfg, $"popup-{grade}");
         }
 
         // quadro do meio da animação da taça (brilho e faíscas)
         foreach (var grade in new[] { TrophyGrade.Gold, TrophyGrade.Platinum })
-        {
-            var popup = new PopupWindow(SamplePopup(grade));
-            TrophyArt.SavePng(await popup.SnapshotAsync(1, highlight: true), Path.Combine(dir, $"brilho-{grade}.png"));
-            popup.Close();
-        }
+            await Shot(SamplePopup(grade), cfg, $"brilho-{grade}", highlight: true);
 
         // quadros da abertura do banner
         foreach (var step in new[] { 0, 50 })
+            await Shot(SamplePopup(TrophyGrade.Gold), cfg, $"abrindo-{step}", step / 100.0);
+
+        // alguns estilos de fundo
+        foreach (var (style, name) in new[] { ("Claro", "estilo-claro"), ("Degrade", "estilo-degrade"), ("Vidro", "estilo-vidro") })
         {
-            var popup = new PopupWindow(SamplePopup(TrophyGrade.Gold));
-            TrophyArt.SavePng(await popup.SnapshotAsync(step / 100.0), Path.Combine(dir, $"abrindo-{step}.png"));
-            popup.Close();
+            var styled = new AppConfig();
+            styled.Look.Style = style;
+            styled.Look.CornerRadius = style == "Degrade" ? 24 : 14;
+            await Shot(SamplePopup(TrophyGrade.Gold) with { ImagePath = art }, styled, name);
         }
+
+        // o Estúdio, nas abas Fundo e Som
+        var studio = new StudioWindow(new AppConfig())
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = -5000,
+            Top = 0,
+        };
+        studio.Show();
+        await Task.Delay(1800);
+        foreach (var (tab, name) in new[] { (0, "estudio-fundo"), (2, "estudio-som") })
+        {
+            var page = await studio.PrepareSnapshotAsync(tab);
+            TrophyArt.SavePng(TrophyArt.Capture(page, page.ActualWidth, page.ActualHeight, 1), Path.Combine(dir, name + ".png"));
+        }
+        studio.Close();
 
         var list = new TrophyListWindow(new DemoSource())
         {
@@ -64,7 +96,7 @@ static class Demo
     }
 
     // Imitação de um ícone de conquista, para ver como fica um pop-up com imagem.
-    static BitmapSource SampleArt()
+    public static BitmapSource SampleArt()
     {
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
