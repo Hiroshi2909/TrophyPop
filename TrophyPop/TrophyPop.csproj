@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TrophyPop</RootNamespace>
+    <AssemblyName>TrophyPop</AssemblyName>
+    <Product>TrophyPop</Product>
+    <Version>1.0.0</Version>
+    <!-- ThemeMode (tema Fluent escuro) ainda é marcado como experimental -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+
+    <!-- desempenho: código já compilado (sem compilar na hora do primeiro troféu),
+         coleta de lixo sem thread extra em segundo plano e só os idiomas usados -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredPGO>false</TieredPGO>
+    <SatelliteResourceLanguages>pt-BR;en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- prefere devolver memória ao Windows a guardar sobra -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="7" />
+    <RuntimeHostConfigurationOption Include="System.GC.RetainVM" Value="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WinForms só é usado para o ícone da bandeja; evita conflito de nomes com o WPF -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+</Project>

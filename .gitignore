@@ -1,0 +1,8 @@
+# compilação
+bin/
+obj/
+*.user
+.vs/
+
+# o .exe pronto vai na página de Releases, não no código
+TrophyPop-pronto/
