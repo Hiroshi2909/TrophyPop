@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
@@ -24,7 +25,7 @@ public sealed class SteamApi(AppConfig cfg) : ITrophySource
     { Timeout = TimeSpan.FromSeconds(15) };
     const string Base = "https://api.steampowered.com";
 
-    string? vanityName, vanityId;
+    readonly ConcurrentDictionary<string, string> vanityCache = new(StringComparer.OrdinalIgnoreCase);
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(cfg.ApiKey);
     string Key => Uri.EscapeDataString(cfg.ApiKey.Trim());
@@ -53,43 +54,81 @@ public sealed class SteamApi(AppConfig cfg) : ITrophySource
         }
     }
 
-    public async Task<string> SteamIdAsync(CancellationToken ct)
+    async Task<string> ResolveSingleIdAsync(string rawInput, CancellationToken ct)
     {
-        var input = cfg.SteamId.Trim();
-        if (input.Length == 0)
-            return SteamLocal.ActiveSteamId64()
-                ?? throw new SteamApiException("Não achei sua conta. Abra a Steam ou informe seu SteamID nas configurações.");
-
-        // aceita o ID numérico, o link do perfil ou o nome personalizado do perfil
+        var input = rawInput.Trim();
         var id = Regex.Match(input, @"7656\d{13}");
         if (id.Success) return id.Value;
 
         var custom = Regex.Match(input, @"/id/([^/?#]+)");
-        var name = custom.Success ? custom.Groups[1].Value : input;
-        if (name == vanityName && vanityId != null) return vanityId;
+        var name = custom.Success ? custom.Groups[1].Value : input.Trim('/');
+        if (vanityCache.TryGetValue(name, out var cached)) return cached;
 
         var json = await GetJsonAsync($"{Base}/ISteamUser/ResolveVanityURL/v1/?key={Key}&vanityurl={Uri.EscapeDataString(name)}", ct);
         if (json.TryGetProperty("response", out var r) && r.Str("steamid") is { Length: > 0 } sid)
         {
-            vanityName = name;
-            return vanityId = sid;
+            vanityCache[name] = sid;
+            return sid;
         }
         throw new SteamApiException($"Perfil Steam \"{name}\" não encontrado.");
     }
 
+    /// <summary>
+    /// Retorna todas as contas vinculadas (ex.: conta antiga + conta nova + conta ativa na Steam local).
+    /// </summary>
+    public async Task<List<string>> SteamIdsAsync(CancellationToken ct)
+    {
+        var inputs = cfg.GetConfiguredSteamInputs();
+        var resolved = new List<string>();
+
+        foreach (var input in inputs)
+        {
+            var sid = await ResolveSingleIdAsync(input, ct);
+            if (!resolved.Contains(sid)) resolved.Add(sid);
+        }
+
+        if ((cfg.IncludeActiveAccount || resolved.Count == 0) && SteamLocal.ActiveSteamId64() is { } active)
+        {
+            if (!resolved.Contains(active)) resolved.Add(active);
+        }
+
+        if (resolved.Count == 0)
+            throw new SteamApiException("Não achei sua conta. Abra a Steam ou informe seu SteamID nas configurações.");
+
+        return resolved;
+    }
+
+    /// <summary>
+    /// Conta usada pelo Tracker durante o jogo (prioriza a conta logada na Steam local agora).
+    /// </summary>
+    public async Task<string> ActiveOrPrimarySteamIdAsync(CancellationToken ct)
+    {
+        if (SteamLocal.ActiveSteamId64() is { } active) return active;
+        var all = await SteamIdsAsync(ct);
+        return all[0];
+    }
+
     public async Task<string> GetProfileNameAsync(CancellationToken ct)
     {
-        var sid = await SteamIdAsync(ct);
-        var json = await GetJsonAsync($"{Base}/ISteamUser/GetPlayerSummaries/v2/?key={Key}&steamids={sid}", ct);
+        var sids = await SteamIdsAsync(ct);
+        var joined = string.Join(",", sids);
+        var json = await GetJsonAsync($"{Base}/ISteamUser/GetPlayerSummaries/v2/?key={Key}&steamids={joined}", ct);
+        var names = new List<string>();
         if (json.TryGetProperty("response", out var r) && r.TryGetProperty("players", out var players))
+        {
+            var byId = new Dictionary<string, string>();
             foreach (var p in players.EnumerateArray())
-                return p.Str("personaname");
+                byId[p.Str("steamid")] = p.Str("personaname");
+            foreach (var sid in sids)
+                if (byId.TryGetValue(sid, out var n) && n.Length > 0)
+                    names.Add(n);
+        }
+        if (names.Count > 0) return string.Join(" · ", names);
         throw new SteamApiException("Perfil Steam não encontrado.");
     }
 
-    public async Task<List<OwnedGame>> GetOwnedGamesAsync(CancellationToken ct)
+    async Task<List<OwnedGame>> GetOwnedGamesForAccountAsync(string sid, CancellationToken ct)
     {
-        var sid = await SteamIdAsync(ct);
         var json = await GetJsonAsync(
             $"{Base}/IPlayerService/GetOwnedGames/v1/?key={Key}&steamid={sid}&include_appinfo=1&include_played_free_games=1", ct);
         if (!json.TryGetProperty("response", out var r) || !r.TryGetProperty("games", out var games))
@@ -113,9 +152,51 @@ public sealed class SteamApi(AppConfig cfg) : ITrophySource
         return list;
     }
 
-    public async Task<PlayerStats> GetPlayerAchievementsAsync(int appId, CancellationToken ct)
+    public async Task<List<OwnedGame>> GetOwnedGamesAsync(CancellationToken ct)
     {
-        var sid = await SteamIdAsync(ct);
+        var sids = await SteamIdsAsync(ct);
+        if (sids.Count == 1)
+            return await GetOwnedGamesForAccountAsync(sids[0], ct);
+
+        var tasks = sids.Select(sid => SafeGetGamesAsync(sid, ct)).ToArray();
+        var results = await Task.WhenAll(tasks);
+
+        Exception? lastErr = results.FirstOrDefault(r => r.Error != null).Error;
+        var successful = results.Where(r => r.Games != null).SelectMany(r => r.Games!).ToList();
+        if (successful.Count == 0 && lastErr != null) throw lastErr;
+
+        // Junta os jogos de todas as contas vinculadas num único catálogo
+        var merged = new Dictionary<int, OwnedGame>();
+        foreach (var g in successful)
+        {
+            if (!merged.TryGetValue(g.AppId, out var cur))
+            {
+                merged[g.AppId] = g;
+            }
+            else
+            {
+                DateTime? last = cur.LastPlayed is null ? g.LastPlayed
+                    : g.LastPlayed is null ? cur.LastPlayed
+                    : cur.LastPlayed > g.LastPlayed ? cur.LastPlayed : g.LastPlayed;
+                merged[g.AppId] = new OwnedGame(
+                    cur.AppId,
+                    cur.Name.Length > 0 ? cur.Name : g.Name,
+                    cur.PlaytimeMinutes + g.PlaytimeMinutes,
+                    cur.IconUrl.Length > 0 ? cur.IconUrl : g.IconUrl,
+                    last);
+            }
+        }
+        return merged.Values.ToList();
+    }
+
+    async Task<(List<OwnedGame>? Games, Exception? Error)> SafeGetGamesAsync(string sid, CancellationToken ct)
+    {
+        try { return (await GetOwnedGamesForAccountAsync(sid, ct), null); }
+        catch (Exception ex) { return (null, ex); }
+    }
+
+    async Task<PlayerStats> GetPlayerAchievementsForAccountAsync(int appId, string sid, CancellationToken ct)
+    {
         var json = await GetJsonAsync($"{Base}/ISteamUserStats/GetPlayerAchievements/v1/?key={Key}&steamid={sid}&appid={appId}", ct);
         if (!json.TryGetProperty("playerstats", out var ps))
             throw new SteamApiException("Resposta inesperada da Steam.");
@@ -135,6 +216,57 @@ public sealed class SteamApi(AppConfig cfg) : ITrophySource
             foreach (var a in list.EnumerateArray())
                 states[a.Str("apiname")] = (a.Num("achieved") == 1, (long)a.Num("unlocktime"));
         return new PlayerStats(ps.Str("gameName"), states);
+    }
+
+    public async Task<PlayerStats> GetPlayerAchievementsAsync(int appId, CancellationToken ct)
+    {
+        var sid = await ActiveOrPrimarySteamIdAsync(ct);
+        return await GetPlayerAchievementsForAccountAsync(appId, sid, ct);
+    }
+
+    async Task<PlayerStats> GetMergedPlayerAchievementsAsync(int appId, CancellationToken ct)
+    {
+        var sids = await SteamIdsAsync(ct);
+        if (sids.Count == 1)
+            return await GetPlayerAchievementsForAccountAsync(appId, sids[0], ct);
+
+        var tasks = sids.Select(async sid =>
+        {
+            try { return (Stats: (PlayerStats?)await GetPlayerAchievementsForAccountAsync(appId, sid, ct), Error: (Exception?)null); }
+            catch (Exception ex) { return (null, ex); }
+        }).ToArray();
+
+        var results = await Task.WhenAll(tasks);
+        var valid = results.Where(r => r.Stats != null).Select(r => r.Stats!).ToList();
+        if (valid.Count == 0)
+        {
+            var err = results.FirstOrDefault(r => r.Error is SteamApiException { NoStats: true }).Error
+                   ?? results.FirstOrDefault(r => r.Error != null).Error
+                   ?? new SteamApiException("Não foi possível carregar as conquistas.");
+            throw err;
+        }
+
+        string gameName = valid.FirstOrDefault(v => v.GameName.Length > 0)?.GameName ?? "";
+        var merged = new Dictionary<string, (bool Achieved, long UnlockTime)>();
+        foreach (var v in valid)
+        {
+            foreach (var (api, state) in v.States)
+            {
+                if (!merged.TryGetValue(api, out var cur))
+                {
+                    merged[api] = state;
+                }
+                else if (state.Achieved && !cur.Achieved)
+                {
+                    merged[api] = state;
+                }
+                else if (state.Achieved && cur.Achieved && state.UnlockTime > 0 && (cur.UnlockTime == 0 || state.UnlockTime < cur.UnlockTime))
+                {
+                    merged[api] = state;
+                }
+            }
+        }
+        return new PlayerStats(gameName, merged);
     }
 
     async Task<(string GameName, List<AchievementInfo> Achievements)> GetSchemaAsync(int appId, CancellationToken ct)
@@ -171,11 +303,19 @@ public sealed class SteamApi(AppConfig cfg) : ITrophySource
         return result;
     }
 
-    public async Task<GameAchievements> LoadGameAsync(int appId, CancellationToken ct)
+    public Task<GameAchievements> LoadGameAsync(int appId, CancellationToken ct) =>
+        LoadGameCoreAsync(appId, activeAccountOnly: false, ct);
+
+    public Task<GameAchievements> LoadGameForTrackerAsync(int appId, CancellationToken ct) =>
+        LoadGameCoreAsync(appId, activeAccountOnly: true, ct);
+
+    async Task<GameAchievements> LoadGameCoreAsync(int appId, bool activeAccountOnly, CancellationToken ct)
     {
         var schemaTask = GetSchemaAsync(appId, ct);
         var percentTask = GetPercentagesAsync(appId, ct);
-        var player = await GetPlayerAchievementsAsync(appId, ct);
+        var player = activeAccountOnly
+            ? await GetPlayerAchievementsAsync(appId, ct)
+            : await GetMergedPlayerAchievementsAsync(appId, ct);
         var (schemaName, achievements) = await schemaTask;
 
         Dictionary<string, double> percents;

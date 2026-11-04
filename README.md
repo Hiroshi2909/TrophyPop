@@ -15,6 +15,19 @@ Pop-ups de troféu no estilo PS5 para as conquistas da Steam, no Windows.
 
 Depois disso é só jogar. O app vê sozinho qual jogo da Steam está aberto.
 
+### Perfil unificado (várias contas da Steam)
+
+Se você tem conquistas e platinas divididas em mais de uma conta da Steam (por exemplo, uma conta antiga e uma conta nova), basta informar os SteamIDs ou links dos perfis separados por vírgula nas **Configurações** (ou clicar em **+ Conta logada agora**). O TrophyPop junta todos os seus jogos, troféus, platinas e capturas numa vitrine só, e detecta automaticamente qual conta está aberta na hora em que você estiver jogando.
+
+## Capturas no estilo PS5 (prints e clipes de Platina)
+
+Pensado para não lotar o seu SSD mesmo quando você tiver centenas de platinas:
+
+- **Bronze, Prata e Ouro**: salva apenas um print leve (`.jpg`) no momento exato em que o pop-up está aberto na tela.
+- **Platina**: grava um clipe curto em vídeo (`.mp4` em H.264) pegando a conquista final e a entrada da Platina. O gravador roda em um processo separado apenas durante os segundos da comemoração e sai da memória assim que o vídeo fecha.
+
+Você pode ver os prints de cada conquista e assistir aos clipes de Platina direto na **Lista de troféus** (ou abrir a pasta `%APPDATA%\TrophyPop\capturas` pelo menu do ícone na bandeja).
+
 ## Tipos de troféu
 
 A Steam não tem tipos de troféu. Aqui o tipo vem da raridade (você pode mudar os limites):
@@ -28,7 +41,8 @@ A Steam não tem tipos de troféu. Aqui o tipo vem da raridade (você pode mudar
 
 ## Menu do ícone perto do relógio
 
-- **Lista de troféus**: seus jogos e troféus, com filtros e ordenação. Também abre com dois cliques no ícone.
+- **Lista de troféus**: seus jogos, troféus, prints e clipes de Platina, com filtros e ordenação. Também abre com dois cliques no ícone.
+- **Pasta de capturas (prints e clipes)**: abre a pasta onde ficam salvos os `.jpg` e `.mp4`.
 - **Personalizar (fundo, animação e som)**: abre o Estúdio.
 - **Configurações da conta Steam**
 - **Testar pop-up**: mostra um exemplo de cada tipo.
@@ -58,6 +72,7 @@ Ao salvar, o app já passa a usar as escolhas, sem reiniciar. O Estúdio roda co
 - Parado, o app fica dormindo: só acorda quando a Steam abre ou fecha um jogo (o Windows avisa) e, com um jogo aberto, para uma consulta pequena à Steam a cada 5 segundos.
 - Roda com prioridade abaixo do normal e no "modo de eficiência" do Windows. Em processadores com núcleos de eficiência, ele fica nesses núcleos e deixa os rápidos para o jogo.
 - O pop-up é desenhado pelo processador, num cartão pequeno e a no máximo 60 quadros por segundo, para não disputar a placa de vídeo com o jogo. A janela só existe enquanto o pop-up aparece.
+- O gravador do clipe da Platina só liga quando você completa 100% de um jogo, num processo separado que fecha sozinho ao terminar o `.mp4`.
 - Depois de cada pop-up ou janela fechada, o app devolve a memória sobrando ao Windows.
 - Sons e código já vêm prontos desde a abertura do app, então nada é preparado na hora do troféu.
 

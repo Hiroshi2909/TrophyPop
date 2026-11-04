@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Compilar TrophyPop.exe
+        run: dotnet publish TrophyPop/TrophyPop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o TrophyPop-pronto
+
+      - name: Publicar Release no GitHub
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "TrophyPop ${{ github.ref_name }}"
+          body: |
+            ### Novidades desta versão
+            - **Perfil unificado (multi-conta)**: vincule mais de uma conta da Steam nas Configurações para juntar todos os seus jogos, troféus e platinas numa lista só.
+            - **Capturas no estilo PS5**:
+              - **Bronze, Prata e Ouro**: salva apenas um print leve (`.jpg`) quando o pop-up está aberto.
+              - **Platina**: grava um clipe curto em vídeo (`.mp4` H.264) em processo separado, sem pesar na memória durante o jogo.
+            - **Visualizador integrado**: veja os prints e assista aos clipes de Platina direto na **Lista de troféus**.
+          files: TrophyPop-pronto/TrophyPop.exe

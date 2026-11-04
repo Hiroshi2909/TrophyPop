@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -9,12 +9,14 @@ namespace TrophyPop;
 // Janela transparente por cima do jogo que só existe enquanto o troféu aparece.
 public partial class PopupWindow : Window
 {
+    readonly PopupItem item;
     readonly AppConfig cfg;
     readonly TrophyCard card;
 
     public PopupWindow(PopupItem item, AppConfig cfg)
     {
         InitializeComponent();
+        this.item = item;
         this.cfg = cfg;
         Content = card = new TrophyCard(item, cfg);
     }
@@ -30,7 +32,7 @@ public partial class PopupWindow : Window
             source.CompositionTarget.RenderMode = RenderMode.SoftwareOnly;
     }
 
-    public Task PlayAsync()
+    public Task PlayAsync(bool captureScreenshot = false)
     {
         var done = new TaskCompletionSource();
         Show();
@@ -44,6 +46,18 @@ public partial class PopupWindow : Window
         Native.BringToTop(Handle);
 
         card.PlayIn(cfg.Corner);
+
+        // Estilo PS5: troféus que não são Platina salvam apenas um print (.jpg) no auge do pop-up
+        if (captureScreenshot && cfg.CaptureScreenshots && item.Grade != TrophyGrade.Platinum)
+        {
+            var key = item.ApiName.Length > 0 ? item.ApiName : item.Grade.ToString();
+            var shotPath = MediaCapture.ScreenshotPath(item.AppId, key);
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(900);
+                MediaCapture.CaptureScreenJpg(shotPath);
+            });
+        }
 
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(Math.Max(1.5, cfg.PopupSeconds)) };
         timer.Tick += (_, _) =>

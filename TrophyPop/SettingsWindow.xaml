@@ -1,11 +1,11 @@
 <Window x:Class="TrophyPop.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="TrophyPop · Configurações" Width="600" SizeToContent="Height" ResizeMode="CanMinimize"
+        Title="TrophyPop · Configurações" Width="620" SizeToContent="Height" ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen" ThemeMode="Dark"
         FontFamily="Segoe UI Variable Text, Segoe UI">
     <StackPanel Margin="28,22,28,24">
-        <TextBlock Text="Conta Steam" FontSize="20" FontWeight="SemiBold"/>
+        <TextBlock Text="Contas Steam (perfil unificado)" FontSize="20" FontWeight="SemiBold"/>
 
         <TextBlock Margin="0,14,0,6" Text="Chave da API Web da Steam"/>
         <TextBox x:Name="ApiKeyBox"/>
@@ -15,17 +15,30 @@
             No campo de domínio pode colocar qualquer nome, como "localhost".
         </TextBlock>
 
-        <TextBlock Margin="0,14,0,6" Text="SteamID ou link do seu perfil (opcional)"/>
+        <DockPanel Margin="0,14,0,6">
+            <TextBlock Text="SteamID(s) ou links dos seus perfis (separe por vírgula para juntar várias contas)" VerticalAlignment="Center"/>
+            <Button DockPanel.Dock="Right" Content="+ Conta logada agora" Padding="10,3" FontSize="12"
+                    HorizontalAlignment="Right" Click="AddActiveAccount_Click"
+                    ToolTip="Adiciona o SteamID da conta que está aberta na Steam deste PC"/>
+        </DockPanel>
         <TextBox x:Name="SteamIdBox"/>
+        <CheckBox x:Name="IncludeActiveCheck" Content="Incluir sempre a conta que estiver logada na Steam deste PC" Margin="0,8,0,0"/>
         <TextBlock Margin="0,6,0,0" FontSize="12" Opacity="0.7" TextWrapping="Wrap"
-                   Text="Vazio = usa a conta logada na Steam deste PC. Seu perfil precisa mostrar os jogos: Steam › Perfil › Editar perfil › Privacidade › Detalhes de jogos: Público."/>
+                   Text="Você pode vincular mais de uma conta (ex.: conta antiga + conta nova) para somar todas as platinas e troféus numa lista só. Cada perfil precisa estar com Detalhes de jogos: Público."/>
 
         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
             <Button x:Name="TestButton" Content="Testar conexão" Click="Test_Click"/>
-            <TextBlock x:Name="TestResult" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="380"/>
+            <TextBlock x:Name="TestResult" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="400"/>
         </StackPanel>
 
-        <TextBlock Text="Troféus" FontSize="20" FontWeight="SemiBold" Margin="0,28,0,0"/>
+        <TextBlock Text="Capturas (estilo PS5)" FontSize="20" FontWeight="SemiBold" Margin="0,24,0,0"/>
+        <TextBlock Margin="0,4,0,8" FontSize="12" Opacity="0.7" TextWrapping="Wrap"
+                   Text="Para economizar espaço no disco mesmo com centenas de platinas, troféus comuns salvam apenas um print leve e somente a Platina grava clipe em vídeo."/>
+        <CheckBox x:Name="ScreenshotCheck" Content="Troféus de Bronze, Prata e Ouro: salvar apenas print (.jpg)" Margin="0,2,0,0"/>
+        <CheckBox x:Name="PlatinumClipCheck" Content="Troféu de Platina: gravar clipe curto de vídeo (.mp4)" Margin="0,8,0,0"/>
+        <Button Content="Abrir pasta de capturas" HorizontalAlignment="Left" Margin="0,10,0,0" Click="OpenCaptures_Click"/>
+
+        <TextBlock Text="Troféus" FontSize="20" FontWeight="SemiBold" Margin="0,24,0,0"/>
         <TextBlock Margin="0,6,0,12" FontSize="12" Opacity="0.7" TextWrapping="Wrap"
                    Text="A Steam não tem bronze, prata e ouro. Aqui o tipo vem da raridade: quanto menos jogadores têm a conquista, mais valioso o troféu. Ao completar 100% do jogo você ganha a platina."/>
         <Grid>
@@ -49,14 +62,14 @@
         <TextBlock Margin="0,14,0,6" Text="Idioma dos nomes dos troféus"/>
         <ComboBox x:Name="LanguageBox" Width="280" HorizontalAlignment="Left"/>
 
-        <TextBlock Text="Visual e som" FontSize="20" FontWeight="SemiBold" Margin="0,28,0,0"/>
+        <TextBlock Text="Visual e som" FontSize="20" FontWeight="SemiBold" Margin="0,24,0,0"/>
         <TextBlock Margin="0,6,0,10" FontSize="12" Opacity="0.7" TextWrapping="Wrap"
                    Text="Fundo, animação, sons de cada troféu, textos e posição ficam no Estúdio, com prévia ao vivo."/>
         <Button Content="Abrir o Estúdio de personalização" HorizontalAlignment="Left" Click="Studio_Click"/>
 
-        <CheckBox x:Name="StartupCheck" Content="Iniciar junto com o Windows" Margin="0,16,0,0"/>
+        <CheckBox x:Name="StartupCheck" Content="Iniciar junto com o Windows" Margin="0,14,0,0"/>
 
-        <DockPanel Margin="0,26,0,0" LastChildFill="False">
+        <DockPanel Margin="0,22,0,0" LastChildFill="False">
             <Button DockPanel.Dock="Left" Content="Testar pop-up" Click="Preview_Click"/>
             <Button DockPanel.Dock="Right" Content="Salvar" Width="110" Margin="8,0,0,0" IsDefault="True"
                     Style="{DynamicResource AccentButtonStyle}" Click="Save_Click"/>

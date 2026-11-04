@@ -11,7 +11,8 @@ public enum PopupCorner { TopRight, TopLeft, BottomRight, BottomLeft }
 public sealed class AppConfig
 {
     public string ApiKey { get; set; } = "";
-    public string SteamId { get; set; } = "";          // vazio = conta logada na Steam deste PC
+    public string SteamId { get; set; } = "";          // vazio = conta logada; aceita várias contas separadas por vírgula
+    public bool IncludeActiveAccount { get; set; } = true;
     public string Language { get; set; } = "brazilian";
     public double SilverBelowPercent { get; set; } = 25;
     public double GoldBelowPercent { get; set; } = 7;
@@ -21,9 +22,19 @@ public sealed class AppConfig
     public double Volume { get; set; } = 0.7;           // volume geral
     public int PollSeconds { get; set; } = 5;
 
+    // Capturas no estilo PS5: print (.jpg) nos troféus comuns e clipe (.mp4) na Platina
+    public bool CaptureScreenshots { get; set; } = true;
+    public bool CapturePlatinumClips { get; set; } = true;
+    public int ClipSeconds { get; set; } = 12;
+
     public LookSettings Look { get; set; } = new();
     public MotionSettings Motion { get; set; } = new();
     public SoundSettings Sounds { get; set; } = new();
+
+    public List<string> GetConfiguredSteamInputs() => SteamId
+        .Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
 
     public static string Dir { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TrophyPop");

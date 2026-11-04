@@ -24,7 +24,14 @@ public sealed record OwnedGame(int AppId, string Name, int PlaytimeMinutes, stri
 
 /// <param name="Detail">Tipo do troféu (ou o texto da platina).</param>
 /// <param name="Rarity">"3,1% dos jogadores", mostrado se a opção de raridade estiver ligada.</param>
-public sealed record PopupItem(string Title, string Detail, string Rarity, TrophyGrade Grade, string? ImagePath);
+public sealed record PopupItem(
+    string Title,
+    string Detail,
+    string Rarity,
+    TrophyGrade Grade,
+    string? ImagePath,
+    int AppId = 0,
+    string ApiName = "");
 
 public interface ITrophySource
 {

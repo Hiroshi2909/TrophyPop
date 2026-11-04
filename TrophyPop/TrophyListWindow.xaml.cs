@@ -116,6 +116,10 @@ public partial class TrophyListWindow : Window
             AddCount(grade, $"{done}/{total}", done > 0);
         }
 
+        PlatinumClipButton.Visibility = MediaCapture.HasPlatinumClip(game.AppId)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
         GameHeader.Visibility = Toolbar.Visibility = Visibility.Visible;
         DetailStatus.Visibility = Visibility.Collapsed;
         RefreshList();
@@ -154,6 +158,7 @@ public partial class TrophyListWindow : Window
     void RefreshList()
     {
         if (current == null) return;
+        int appId = current.AppId;
         IEnumerable<AchievementInfo> q = current.Achievements;
         q = FilterBox.SelectedIndex switch
         {
@@ -168,10 +173,27 @@ public partial class TrophyListWindow : Window
             3 => q.OrderByDescending(a => a.Percent ?? -1),
             _ => q,
         };
-        var rows = q.Select(a => new AchievementRow(a)).ToList();
+        var rows = q.Select(a => new AchievementRow(appId, a)).ToList();
         AchList.ItemsSource = rows;
         ListInfo.Text = rows.Count == 1 ? "1 troféu" : $"{rows.Count} troféus";
     }
+
+    void PlatinumClip_Click(object sender, RoutedEventArgs e)
+    {
+        if (current == null) return;
+        var path = MediaCapture.PlatinumClipPath(current.AppId);
+        if (!MediaCapture.HasPlatinumClip(current.AppId)) return;
+        new MediaViewerWindow(current.GameName, TrophyGrade.Platinum, path) { Owner = this }.ShowDialog();
+    }
+
+    void ViewScreenshot_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: AchievementRow row } && row.HasScreenshot)
+            new MediaViewerWindow(row.Name, row.Grade, row.ScreenshotPath) { Owner = this }.ShowDialog();
+    }
+
+    void OpenCaptures_Click(object sender, RoutedEventArgs e) =>
+        MediaCapture.OpenFolder(current?.AppId);
 }
 
 sealed class GameRow(OwnedGame game, bool running)
@@ -185,7 +207,7 @@ sealed class GameRow(OwnedGame game, bool running)
         : $"{game.PlaytimeMinutes / 60} h jogadas";
 }
 
-sealed class AchievementRow(AchievementInfo a)
+sealed class AchievementRow(int appId, AchievementInfo a)
 {
     static readonly Brush Earned = Frozen(new SolidColorBrush(Color.FromRgb(0x7F, 0xC8, 0xFF)));
     static readonly Brush Locked = Frozen(new SolidColorBrush(Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)));
@@ -193,6 +215,7 @@ sealed class AchievementRow(AchievementInfo a)
     ImageSource? icon;
     bool Secret => a.Hidden && !a.Achieved;
 
+    public TrophyGrade Grade => a.Grade;
     public string Name => Secret ? "Troféu oculto" : a.DisplayName;
     public string Description => Secret ? "Continue jogando para descobrir." : a.Description;
     public ImageSource? Icon => icon ??= TrophyArt.Web(a.Achieved ? a.IconUrl : a.IconGrayUrl);
@@ -205,6 +228,10 @@ sealed class AchievementRow(AchievementInfo a)
     public string UnlockText => !a.Achieved ? "Não conquistado"
         : a.UnlockTime is { } t ? $"Conquistado em {t:dd/MM/yyyy} às {t:HH:mm}"
         : "Conquistado";
+
+    public string ScreenshotPath => MediaCapture.ScreenshotPath(appId, a.ApiName);
+    public bool HasScreenshot => MediaCapture.HasScreenshot(appId, a.ApiName);
+    public Visibility ScreenshotVisibility => HasScreenshot ? Visibility.Visible : Visibility.Collapsed;
 
     static Brush Frozen(Brush b)
     {

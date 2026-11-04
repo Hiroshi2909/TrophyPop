@@ -26,6 +26,15 @@ public partial class App : Application
             ex.Handled = true; // nunca derrubar o app no meio do jogo
         };
 
+        // O gravador do clipe da Platina roda como processo separado e sai da memória ao finalizar o .mp4
+        if (e.Args is ["--gravar-clipe", var clipPath, var secStr, ..])
+        {
+            int sec = int.TryParse(secStr, out int s) ? s : 12;
+            MediaCapture.RunClipRecorderProcess(clipPath, sec);
+            Shutdown();
+            return;
+        }
+
         if (e.Args is ["--snapshot", var dir, ..])
         {
             RunSnapshot(dir);
@@ -88,8 +97,8 @@ public partial class App : Application
     {
         var prepared = new List<PopupItem>();
         foreach (var a in items)
-            prepared.Add(PopupManager.ForAchievement(a, await ImageCache.GetAsync(a.IconUrl)));
-        if (platinum) prepared.Add(PopupManager.ForPlatinum(game.GameName));
+            prepared.Add(PopupManager.ForAchievement(a, await ImageCache.GetAsync(a.IconUrl), game.AppId));
+        if (platinum) prepared.Add(PopupManager.ForPlatinum(game.GameName, game.AppId));
         await Dispatcher.InvokeAsync(() => prepared.ForEach(p => popups.Enqueue(p)));
     }
 
@@ -101,6 +110,7 @@ public partial class App : Application
         menu.Items.Add(statusItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("Lista de troféus", null, (_, _) => OpenList());
+        menu.Items.Add("Pasta de capturas (prints e clipes)", null, (_, _) => MediaCapture.OpenFolder());
         menu.Items.Add("Personalizar (fundo, animação e som)…", null, (_, _) => OpenStudio());
         menu.Items.Add("Configurações da conta Steam", null, (_, _) => OpenSettings());
 
@@ -202,7 +212,8 @@ public partial class App : Application
     void ReloadConfig()
     {
         if (AppConfig.TryLoad() is not { } fresh) return;
-        bool steamChanged = fresh.ApiKey != cfg.ApiKey || fresh.SteamId != cfg.SteamId || fresh.Language != cfg.Language
+        bool steamChanged = fresh.ApiKey != cfg.ApiKey || fresh.SteamId != cfg.SteamId
+            || fresh.IncludeActiveAccount != cfg.IncludeActiveAccount || fresh.Language != cfg.Language
             || fresh.SilverBelowPercent != cfg.SilverBelowPercent || fresh.GoldBelowPercent != cfg.GoldBelowPercent;
         cfg.CopyFrom(fresh);
         SoundService.Prepare(cfg);

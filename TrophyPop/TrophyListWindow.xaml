@@ -87,7 +87,11 @@
                         <ProgressBar x:Name="Progress" Maximum="100" Height="6" VerticalAlignment="Center"/>
                         <TextBlock x:Name="ProgressText" Grid.Column="1" Margin="12,0,0,0" FontWeight="SemiBold"/>
                     </Grid>
-                    <StackPanel x:Name="CountsPanel" Orientation="Horizontal" Margin="0,14,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <StackPanel x:Name="CountsPanel" Orientation="Horizontal" VerticalAlignment="Center"/>
+                        <Button x:Name="PlatinumClipButton" Content="▶ Ver clipe da Platina" Visibility="Collapsed"
+                                Margin="6,0,0,0" Padding="12,4" FontSize="12.5" Click="PlatinumClip_Click"/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
 
@@ -103,6 +107,7 @@
                     <ComboBoxItem Content="Mais raros"/>
                     <ComboBoxItem Content="Mais comuns"/>
                 </ComboBox>
+                <Button Content="Pasta de capturas" Margin="10,0,0,0" Padding="12,4" Click="OpenCaptures_Click"/>
                 <TextBlock x:Name="ListInfo" HorizontalAlignment="Right" VerticalAlignment="Center" Opacity="0.55"/>
             </DockPanel>
 
@@ -128,7 +133,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="56"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="160"/>
+                                    <ColumnDefinition Width="175"/>
                                 </Grid.ColumnDefinitions>
                                 <Border Width="56" Height="56" CornerRadius="8" Background="#22FFFFFF"/>
                                 <Border Width="56" Height="56" CornerRadius="8" Opacity="{Binding IconOpacity}">
@@ -148,6 +153,9 @@
                                         <TextBlock Text="{Binding GradeText}" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding RarityText}" FontSize="11.5" Opacity="0.55" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                                    <Button Content="Ver print" Visibility="{Binding ScreenshotVisibility}"
+                                            HorizontalAlignment="Right" Margin="0,6,0,0" Padding="10,2" FontSize="11.5"
+                                            Tag="{Binding}" Click="ViewScreenshot_Click"/>
                                 </StackPanel>
                             </Grid>
                         </Border>

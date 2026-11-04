@@ -15,6 +15,7 @@ public sealed class Tracker(AppConfig cfg, SteamApi api) : IDisposable
     FileSystemWatcher? watcher;
     GameAchievements? game;
     int lastApp = -1;
+    string? lastUser;
     bool unsupported;
     volatile bool reload;
     DateTime nextCheck = DateTime.MinValue;
@@ -66,16 +67,18 @@ public sealed class Tracker(AppConfig cfg, SteamApi api) : IDisposable
     void Tick()
     {
         int app = SteamLocal.RunningAppId();
-        if (reload || app != lastApp)
+        var activeUser = SteamLocal.ActiveSteamId64();
+        if (reload || app != lastApp || activeUser != lastUser)
         {
             // conquistas feitas logo antes de fechar o jogo ainda aparecem
-            if (!reload && game != null)
+            if (!reload && game != null && activeUser == lastUser)
             {
                 if (stop.WaitOne(4000)) return;
                 Check();
             }
             reload = false;
             lastApp = app;
+            lastUser = activeUser;
             SwitchGame(app);
         }
         else if (app != 0 && !unsupported && DateTime.UtcNow >= nextCheck)
@@ -106,7 +109,7 @@ public sealed class Tracker(AppConfig cfg, SteamApi api) : IDisposable
         SetStatus("Carregando troféus do jogo...");
         nextCheck = DateTime.UtcNow.AddSeconds(Math.Max(cfg.PollSeconds, 15)); // se falhar, tenta de novo depois
         GameAchievements loaded;
-        try { loaded = Run(api.LoadGameAsync(app, cts.Token)); }
+        try { loaded = Run(api.LoadGameForTrackerAsync(app, cts.Token)); }
         catch (SteamApiException ex) when (ex.NoStats)
         {
             unsupported = true;
@@ -172,7 +175,11 @@ public sealed class Tracker(AppConfig cfg, SteamApi api) : IDisposable
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
                 InternalBufferSize = 4096,
             };
-            void Changed() => _ = Task.Delay(1500).ContinueWith(_ => wake.Set());
+            void Changed()
+            {
+                _ = Task.Delay(1200).ContinueWith(_ => wake.Set());
+                _ = Task.Delay(3800).ContinueWith(_ => wake.Set());
+            }
             watcher.Changed += (_, _) => Changed();
             watcher.Created += (_, _) => Changed();
             watcher.Renamed += (_, _) => Changed();
