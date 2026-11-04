@@ -11,6 +11,7 @@ public partial class TrophyCard : UserControl
 {
     readonly AppConfig cfg;
     readonly bool platinum;
+    readonly bool hasArtwork;
     RectangleGeometry? clip;
     double k = 1; // multiplica todos os tempos (velocidade da animação)
 
@@ -27,28 +28,28 @@ public partial class TrophyCard : UserControl
         DetailText.Text = look.ShowRarity && item.Rarity.Length > 0 ? $"{item.Detail} · {item.Rarity}" : item.Detail;
 
         var accent = TrophyArt.Accent(item.Grade);
+        Art.Background = new RadialGradientBrush(Color.FromArgb(0x78, accent.R, accent.G, accent.B), Color.FromRgb(0x10, 0x13, 0x20))
+        {
+            GradientOrigin = new Point(0.5, 0.35),
+            RadiusX = 0.75,
+            RadiusY = 0.75,
+        };
+
         if (TrophyArt.FromFile(item.ImagePath, 128) is { } image)
         {
-            Art.Background = new ImageBrush(image) { Stretch = Stretch.UniformToFill };
+            hasArtwork = true;
+            ArtImage.Background = new ImageBrush(image) { Stretch = Stretch.UniformToFill };
+            ArtImage.Visibility = Visibility.Visible;
             Badge.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            Art.Background = new RadialGradientBrush(Color.FromArgb(0x70, accent.R, accent.G, accent.B), Color.FromRgb(0x10, 0x13, 0x20))
-            {
-                GradientOrigin = new Point(0.5, 0.35),
-                RadiusX = 0.75,
-                RadiusY = 0.75,
-            };
-            BigTrophy.Visibility = Visibility.Visible;
         }
 
         ApplyLook(look, accent);
 
-        if (platinum)
+        if (platinum || item.Grade == TrophyGrade.Gold)
         {
+            var sheenColor = platinum ? Color.FromArgb(0x58, 0xD8, 0xEC, 0xFF) : Color.FromArgb(0x38, 0xFF, 0xEC, 0xA8);
             Sheen.Fill = new LinearGradientBrush(
-                [new GradientStop(Colors.Transparent, 0), new GradientStop(Color.FromArgb(0x55, 0xD8, 0xE9, 0xFF), 0.5), new GradientStop(Colors.Transparent, 1)],
+                [new GradientStop(Colors.Transparent, 0), new GradientStop(sheenColor, 0.5), new GradientStop(Colors.Transparent, 1)],
                 new Point(0, 0.5), new Point(1, 0.5));
             SheenHost.Visibility = Visibility.Visible;
         }
@@ -141,7 +142,21 @@ public partial class TrophyCard : UserControl
         double width = open.Width, height = open.Height;
         bool right = corner is PopupCorner.TopRight or PopupCorner.BottomRight;
         var easeOut = new CubicEase { EasingMode = EasingMode.EaseOut };
-        double trophyAt, badgeAt, headerAt;
+        double trophyAt, headerAt;
+
+        // Estado inicial da caixa 64x64: mostra sempre a taça grande primeiro
+        BigTrophy.BeginAnimation(OpacityProperty, null);
+        BigTrophyScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        BigTrophyScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        BigTrophy.Opacity = 1;
+        BigTrophyScale.ScaleX = BigTrophyScale.ScaleY = 1;
+        if (hasArtwork)
+        {
+            ArtImage.BeginAnimation(OpacityProperty, null);
+            Badge.BeginAnimation(OpacityProperty, null);
+            ArtImage.Opacity = 0;
+            Badge.Opacity = 0;
+        }
 
         switch (m.Entrance)
         {
@@ -149,7 +164,7 @@ public partial class TrophyCard : UserControl
                 Animate(Shell, OpacityProperty, 0, 1, 0, 220);
                 Animate(Move, TranslateTransform.XProperty, right ? 80 : -80, 0, 0, 520, new BackEase { Amplitude = 0.25, EasingMode = EasingMode.EaseOut });
                 Animate(TextPanel, OpacityProperty, 0, 1, 160, 300);
-                (trophyAt, badgeAt, headerAt) = (180, 320, 380);
+                (trophyAt, headerAt) = (140, 360);
                 break;
             case "Surgir":
                 Pop.CenterX = width / 2;
@@ -158,13 +173,13 @@ public partial class TrophyCard : UserControl
                 Animate(Pop, ScaleTransform.ScaleXProperty, 0.9, 1, 0, 380, easeOut);
                 Animate(Pop, ScaleTransform.ScaleYProperty, 0.9, 1, 0, 380, easeOut);
                 Animate(TextPanel, OpacityProperty, 0, 1, 100, 320);
-                (trophyAt, badgeAt, headerAt) = (140, 300, 340);
+                (trophyAt, headerAt) = (100, 320);
                 break;
             case "Quique":
                 Animate(Shell, OpacityProperty, 0, 1, 0, 200);
                 Animate(Move, TranslateTransform.YProperty, -60, 0, 0, 800, new BounceEase { Bounces = 2, Bounciness = 3, EasingMode = EasingMode.EaseOut });
                 Animate(TextPanel, OpacityProperty, 0, 1, 200, 300);
-                (trophyAt, badgeAt, headerAt) = (350, 450, 500);
+                (trophyAt, headerAt) = (260, 480);
                 break;
             default: // Ps5: o quadradinho do ícone surge e se abre num banner
                 clip!.Rect = closed;
@@ -177,18 +192,36 @@ public partial class TrophyCard : UserControl
                 Animate(ShadowBox, WidthProperty, tile, width, 260, 380, easeOut);
                 Animate(TextPanel, OpacityProperty, 0, 1, 380, 280);
                 Animate(TextShift, TranslateTransform.XProperty, -14, 0, 380, 320, easeOut);
-                (trophyAt, badgeAt, headerAt) = (80, 260, 420);
+                (trophyAt, headerAt) = (70, 400);
                 break;
         }
 
-        // a taça ganha vida: pulo, balanço, brilho e faíscas
-        // (a própria taça aplica a velocidade aos tempos)
-        if (BigTrophy.Visibility == Visibility.Visible) BigTrophy.Play(trophyAt, celebrate: true, m);
-        else BadgeTrophy.Play(badgeAt, celebrate: false, m);
+        // 1ª etapa: a taça grande faz a coreografia completa do PS5 (giro 3D, luz, onda e faíscas)
+        BigTrophy.Play(trophyAt, celebrate: true, m);
         HeaderTrophy.Play(headerAt, celebrate: false, m);
 
-        if (platinum)
-            Animate(SheenMove, TranslateTransform.XProperty, -200, width + 60, 700, 1000, new CubicEase { EasingMode = EasingMode.EaseInOut });
+        // 2ª etapa (igual ao PS5): após a celebração da taça, revela o ícone da conquista e o selo no canto
+        if (hasArtwork)
+        {
+            double swapAt = trophyAt + 1220;
+            var easeIn = new CubicEase { EasingMode = EasingMode.EaseIn };
+            Animate(BigTrophy, OpacityProperty, 1, 0, swapAt, 260, easeIn);
+            Animate(BigTrophyScale, ScaleTransform.ScaleXProperty, 1, 0.65, swapAt, 260, easeIn);
+            Animate(BigTrophyScale, ScaleTransform.ScaleYProperty, 1, 0.65, swapAt, 260, easeIn);
+
+            Animate(ArtImage, OpacityProperty, 0, 1, swapAt + 60, 300, easeOut);
+            Animate(ArtImageScale, ScaleTransform.ScaleXProperty, 1.18, 1, swapAt + 60, 340, easeOut);
+            Animate(ArtImageScale, ScaleTransform.ScaleYProperty, 1.18, 1, swapAt + 60, 340, easeOut);
+
+            var badgePop = new BackEase { Amplitude = 0.5, EasingMode = EasingMode.EaseOut };
+            Animate(Badge, OpacityProperty, 0, 1, swapAt + 180, 200);
+            Animate(BadgeScale, ScaleTransform.ScaleXProperty, 0.3, 1, swapAt + 180, 340, badgePop);
+            Animate(BadgeScale, ScaleTransform.ScaleYProperty, 0.3, 1, swapAt + 180, 340, badgePop);
+            BadgeTrophy.Play(swapAt + 200, celebrate: false, m);
+        }
+
+        if (SheenHost.Visibility == Visibility.Visible)
+            Animate(SheenMove, TranslateTransform.XProperty, -200, width + 60, 660, 1050, new CubicEase { EasingMode = EasingMode.EaseInOut });
     }
 
     public void PlayOut(PopupCorner corner, Action done)
@@ -236,8 +269,17 @@ public partial class TrophyCard : UserControl
         Pop.BeginAnimation(ScaleTransform.ScaleXProperty, null);
         Pop.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         ShadowBox.BeginAnimation(WidthProperty, null);
+        BigTrophy.BeginAnimation(OpacityProperty, null);
+        BigTrophyScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        BigTrophyScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        ArtImage.BeginAnimation(OpacityProperty, null);
+        Badge.BeginAnimation(OpacityProperty, null);
+
         Move.X = Move.Y = 0;
         Pop.ScaleX = Pop.ScaleY = 1;
+        BigTrophyScale.ScaleX = BigTrophyScale.ScaleY = 1;
+        ArtImageScale.ScaleX = ArtImageScale.ScaleY = 1;
+        BadgeScale.ScaleX = BadgeScale.ScaleY = 1;
 
         double w = tile + (open.Width - tile) * progress;
         clip!.Rect = new Rect(0, 0, w, open.Height);
@@ -245,7 +287,20 @@ public partial class TrophyCard : UserControl
         Shell.Opacity = 1;
         TextPanel.Opacity = progress;
         SheenMove.X = 150;
-        if (highlight) BigTrophy.ShowHighlightFrame();
+
+        if (hasArtwork && !highlight)
+        {
+            BigTrophy.Opacity = 0;
+            ArtImage.Opacity = 1;
+            Badge.Opacity = 1;
+        }
+        else
+        {
+            BigTrophy.Opacity = 1;
+            ArtImage.Opacity = 0;
+            Badge.Opacity = 0;
+            if (highlight) BigTrophy.ShowHighlightFrame();
+        }
     }
 
     void Animate(IAnimatable target, DependencyProperty property, double from, double to,

@@ -52,9 +52,10 @@ public partial class PopupWindow : Window
         {
             var key = item.ApiName.Length > 0 ? item.ApiName : item.Grade.ToString();
             var shotPath = MediaCapture.ScreenshotPath(item.AppId, key);
+            int delayMs = !string.IsNullOrEmpty(item.ImagePath) ? 1450 : 850;
             _ = Task.Run(async () =>
             {
-                await Task.Delay(900);
+                await Task.Delay(delayMs);
                 MediaCapture.CaptureScreenJpg(shotPath);
             });
         }

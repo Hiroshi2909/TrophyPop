@@ -30,6 +30,10 @@ jobs:
           name: "TrophyPop ${{ github.ref_name }}"
           body: |
             ### Novidades desta versão
+            - **Taças e animações 3D no estilo PS5**:
+              - **4 modelos exclusivos de taça**: Bronze (clássica), Prata (angular), Ouro (imponente) e Platina (hastes espiraladas com esfera central flutuante).
+              - **Coreografia própria por raridade**: giro 3D com reflexo dinâmico no metal, ondas de choque (*shockwave*), coroa de raios giratórios e partículas ascendentes.
+              - **Revelação em 2 etapas**: a taça grande anima primeiro e depois faz *crossfade* para a arte da conquista com o selo no canto.
             - **Perfil unificado (multi-conta)**: vincule mais de uma conta da Steam nas Configurações para juntar todos os seus jogos, troféus e platinas numa lista só.
             - **Capturas no estilo PS5**:
               - **Bronze, Prata e Ouro**: salva apenas um print leve (`.jpg`) quando o pop-up está aberto.

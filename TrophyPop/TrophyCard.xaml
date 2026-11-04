@@ -31,14 +31,34 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border x:Name="Art" Width="64" Height="64" CornerRadius="9">
-                            <local:TrophyIcon x:Name="BigTrophy" Width="44" Height="44" Visibility="Collapsed"/>
-                        </Border>
+                        <Grid Width="64" Height="64">
+                            <!-- 1ª fase (estilo PS5): fundo radial com a taça grande animando em 3D -->
+                            <Border x:Name="Art" Width="64" Height="64" CornerRadius="9">
+                                <Grid RenderTransformOrigin="0.5,0.5">
+                                    <Grid.RenderTransform>
+                                        <ScaleTransform x:Name="BigTrophyScale"/>
+                                    </Grid.RenderTransform>
+                                    <local:TrophyIcon x:Name="BigTrophy" Width="46" Height="46"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 2ª fase: revela a arte da conquista da Steam após a animação da taça -->
+                            <Border x:Name="ArtImage" Width="64" Height="64" CornerRadius="9" Opacity="0"
+                                    Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform x:Name="ArtImageScale"/>
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
 
                         <!-- selo com a taça no canto da imagem da conquista -->
                         <Border x:Name="Badge" Width="28" Height="28" CornerRadius="14" Margin="0,0,-7,-7"
-                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed"
-                                Background="#F0222327" BorderBrush="#33FFFFFF" BorderThickness="1">
+                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed" Opacity="0"
+                                Background="#F0222327" BorderBrush="#33FFFFFF" BorderThickness="1"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="BadgeScale"/>
+                            </Border.RenderTransform>
                             <local:TrophyIcon x:Name="BadgeTrophy" Width="19" Height="19"/>
                         </Border>
 
@@ -59,7 +79,7 @@
                 </Grid>
             </Border>
 
-            <!-- brilho que atravessa o cartão (só na platina) -->
+            <!-- brilho que atravessa o cartão (ouro e platina) -->
             <Canvas x:Name="SheenHost" IsHitTestVisible="False" Visibility="Collapsed">
                 <Rectangle x:Name="Sheen" Width="90" Height="170" Canvas.Top="-40">
                     <Rectangle.RenderTransform>

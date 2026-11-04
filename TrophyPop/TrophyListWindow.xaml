@@ -148,7 +148,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Path Data="{x:Static local:TrophyArt.Geometry}" Fill="{Binding GradeBrush}"
+                                        <Path Data="{Binding GradeGeometry}" Fill="{Binding GradeBrush}"
                                               Width="20" Height="20" Stretch="Uniform"/>
                                         <TextBlock Text="{Binding GradeText}" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                     </StackPanel>

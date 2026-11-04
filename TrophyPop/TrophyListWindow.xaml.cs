@@ -136,7 +136,7 @@ public partial class TrophyListWindow : Window
         };
         panel.Children.Add(new Shapes.Path
         {
-            Data = TrophyArt.Geometry,
+            Data = TrophyArt.GeometryFor(grade),
             Fill = TrophyArt.Brush(grade),
             Width = 20,
             Height = 20,
@@ -216,6 +216,7 @@ sealed class AchievementRow(int appId, AchievementInfo a)
     bool Secret => a.Hidden && !a.Achieved;
 
     public TrophyGrade Grade => a.Grade;
+    public Geometry GradeGeometry => TrophyArt.GeometryFor(a.Grade);
     public string Name => Secret ? "Troféu oculto" : a.DisplayName;
     public string Description => Secret ? "Continue jogando para descobrir." : a.Description;
     public ImageSource? Icon => icon ??= TrophyArt.Web(a.Achieved ? a.IconUrl : a.IconGrayUrl);

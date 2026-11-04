@@ -5,6 +5,17 @@
     <Viewbox Stretch="Uniform">
         <!-- tudo desenhado numa caixa 24x24 -->
         <Canvas Width="24" Height="24">
+            <!-- coroa de raios de luz (Ouro e Platina) -->
+            <Path x:Name="Rays" Opacity="0" RenderTransformOrigin="0.5,0.5">
+                <Path.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="RaysScale" ScaleX="0.6" ScaleY="0.6"/>
+                        <RotateTransform x:Name="RaysSpin"/>
+                    </TransformGroup>
+                </Path.RenderTransform>
+            </Path>
+
+            <!-- aura de luz atrás da taça -->
             <Ellipse x:Name="Glow" Canvas.Left="-8" Canvas.Top="-8" Width="40" Height="40" Opacity="0"
                      RenderTransformOrigin="0.5,0.5">
                 <Ellipse.RenderTransform>
@@ -12,30 +23,58 @@
                 </Ellipse.RenderTransform>
             </Ellipse>
 
-            <Canvas x:Name="Cup" Width="24" Height="24" RenderTransformOrigin="0.5,0.9">
+            <!-- anel de onda de choque (shockwave estilo PS5) -->
+            <Ellipse x:Name="Shockwave" Canvas.Left="-4" Canvas.Top="-4" Width="32" Height="32" Opacity="0"
+                     StrokeThickness="1.8" RenderTransformOrigin="0.5,0.5">
+                <Ellipse.RenderTransform>
+                    <ScaleTransform x:Name="ShockScale" ScaleX="0.2" ScaleY="0.2"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Canvas x:Name="Cup" Width="24" Height="24" RenderTransformOrigin="0.5,0.82">
                 <Canvas.RenderTransform>
                     <TransformGroup>
                         <ScaleTransform x:Name="CupScale"/>
                         <RotateTransform x:Name="CupTilt"/>
+                        <TranslateTransform x:Name="CupMove"/>
                     </TransformGroup>
                 </Canvas.RenderTransform>
                 <Path x:Name="Body"/>
-                <!-- luz à esquerda e sombra à direita dão o volume de metal -->
-                <Path x:Name="Shade"/>
-                <Rectangle Canvas.Left="6.9" Canvas.Top="2.75" Width="10.2" Height="0.7" RadiusX="0.35" RadiusY="0.35" Fill="#A0FFFFFF"/>
+                <!-- luz e sombra que deslizam durante o giro 3D para dar volume de metal real -->
+                <Canvas x:Name="ShadeHost" Width="24" Height="24">
+                    <Path x:Name="Shade">
+                        <Path.RenderTransform>
+                            <TranslateTransform x:Name="ShadeShift"/>
+                        </Path.RenderTransform>
+                    </Path>
+                </Canvas>
+
+                <!-- esfera luminosa central (exclusiva da Platina do PS5) -->
+                <Path x:Name="PlatCore" Visibility="Collapsed" RenderTransformOrigin="0.5,0.35">
+                    <Path.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform x:Name="CoreScale"/>
+                            <TranslateTransform x:Name="CoreFloat"/>
+                        </TransformGroup>
+                    </Path.RenderTransform>
+                </Path>
+
+                <Rectangle x:Name="RimHighlight" Canvas.Left="6.9" Canvas.Top="2.75" Width="10.2" Height="0.7"
+                           RadiusX="0.35" RadiusY="0.35" Fill="#A8FFFFFF"/>
+
                 <Canvas x:Name="GlintHost" Width="24" Height="24">
-                    <Rectangle x:Name="Glint" Width="4.5" Height="36" Canvas.Top="-6">
+                    <Rectangle x:Name="Glint" Width="5" Height="36" Canvas.Top="-6">
                         <Rectangle.Fill>
                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                                 <GradientStop Color="#00FFFFFF" Offset="0"/>
-                                <GradientStop Color="#E6FFFFFF" Offset="0.5"/>
+                                <GradientStop Color="#F0FFFFFF" Offset="0.5"/>
                                 <GradientStop Color="#00FFFFFF" Offset="1"/>
                             </LinearGradientBrush>
                         </Rectangle.Fill>
                         <Rectangle.RenderTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="22"/>
-                                <TranslateTransform x:Name="GlintMove" X="-10"/>
+                                <TranslateTransform x:Name="GlintMove" X="-12"/>
                             </TransformGroup>
                         </Rectangle.RenderTransform>
                     </Rectangle>

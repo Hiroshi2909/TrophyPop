@@ -40,7 +40,7 @@ public sealed class MediaViewerWindow : Window
         var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
         header.Children.Add(new Shapes.Path
         {
-            Data = TrophyArt.Geometry,
+            Data = TrophyArt.GeometryFor(grade),
             Fill = TrophyArt.Brush(grade),
             Width = 24,
             Height = 24,
